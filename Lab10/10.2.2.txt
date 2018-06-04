@@ -1,0 +1,324 @@
+#include <hidef.h>      /* common defines and macros */
+
+#include "derivative.h" /* derivative-specific definitions */
+
+
+
+//polarizzazione
+
+#define pol_A  PWMPOL_PPOL0
+
+#define pol_B  PWMPOL_PPOL1
+
+#define pol_C  PWMPOL_PPOL2
+
+#define pol_D  PWMPOL_PPOL3
+
+
+
+//prescaler
+
+#define prescaler_A PWMPRCLK_PCKA
+
+
+
+//allineamento
+
+#define allineamento_A PWMCAE_CAE0 //per selezionare la modalità di allineamento A
+
+#define allineamento_B PWMCAE_CAE1 //per selezionare la modalità di allineamento B
+
+#define allineamento_C PWMCAE_CAE2 //per selezionare la modalità di allineamento C
+
+#define allineamento_D PWMCAE_CAE3 //per selezionare la modalità di allineamento D
+
+
+
+//periodo 
+
+#define periodo_A PWMPER0
+
+#define periodo_B PWMPER1
+
+#define periodo_C PWMPER2
+
+#define periodo_D PWMPER3
+
+
+
+//duty cycle
+
+#define duty_A PWMDTY0
+
+#define duty_B PWMDTY1
+
+#define duty_C PWMDTY2
+
+#define duty_D PWMDTY3
+
+
+
+//abilitare i canali
+
+#define en_canale_A PWME_PWME0 
+
+#define en_canale_B PWME_PWME1
+
+#define en_canale_C PWME_PWME2 
+
+#define en_canale_D PWME_PWME3 
+
+
+
+//potenziometro
+
+#define risoluzione ATDCTL1_SRES0
+
+#define en_interr ATDCTL2_ASCIE
+
+#define giustificazione ATDCTL3_DJM
+
+
+
+#define flag_fine_conv ATDSTAT2_CCF0
+
+
+
+
+
+
+
+
+
+
+
+ void main(void)  
+
+ {   
+    PWMCLK_PCLK0=0;
+    PWMCLK_PCLK1=0;
+    PWMCLK_PCLK2=0;
+    PWMCLK_PCLK3=0;
+    
+    PWMCLKAB_PCLKAB0=0;
+    PWMCLKAB_PCLKAB1=0;
+    PWMCLKAB_PCLKAB2=1;
+    PWMCLKAB_PCLKAB3=1;
+
+    //PWMCLK = 0x00;
+
+    //PWMCLKAB = 0x0C;
+
+    
+
+    //settaggio delle polarizzazioni
+
+    pol_A = 1;
+
+    pol_B = 0;
+
+    pol_C = 0;
+
+    pol_D = 1;
+
+    
+
+    prescaler_A = 3; //setto il prescaler del Clock_A a 3 per avere una freqquenza di 781.25 KHz
+
+    
+
+    //settaggio allineamento
+
+    allineamento_A = 1; // center alignment
+
+    allineamento_B = 1; // center alignment
+
+    
+
+    allineamento_C = 0; //left alignment
+
+    allineamento_D = 0; //left alignment
+
+    
+
+   
+
+    //settaggi iniziali del periodo
+
+    periodo_A = 0x7F;  // 127
+
+    periodo_B = 0x7F;  // 127
+
+    
+
+    periodo_C = 0xFF;  //255
+
+    periodo_D = 0xFF;  //255
+
+    
+
+    //settaggi duty cycle
+
+    duty_A =64; //duty al 50%
+
+    duty_B =64;
+
+    duty_C =0x7F;
+
+    duty_D =0x7F;
+
+    
+
+    //resetto i contatori
+
+    PWMCNT0 = 0; 
+
+    PWMCNT1 = 0; 
+
+    PWMCNT2 = 0; 
+
+    PWMCNT3 = 0;
+
+    
+
+    //abilito i contatori
+
+     en_canale_A = 1;
+
+     
+
+     en_canale_B = 1;
+
+     
+
+     en_canale_C = 1;
+
+     
+
+     en_canale_D = 1;
+
+     
+
+     //configurazione del potenziometro
+
+     risoluzione = 0; //impostiamo la risoluzione a 8 bit
+
+     en_interr = 1; //abilito gli interrupt
+
+     giustificazione = 1;
+
+     ATDCTL5_SCAN = 1; //abilito la conversione in maniera continua
+
+      
+
+    
+
+    
+
+    
+
+    
+
+     
+
+     
+
+     
+
+     
+
+      //wait PLL lock
+
+    while (!CPMUFLG_LOCK); //serve per aspettare che il PLL sia stabile 
+
+     
+
+    
+
+     
+
+ 
+
+  EnableInterrupts; 
+
+ 
+
+
+
+
+
+ for(;;)
+
+   { 
+
+     
+
+      
+
+      
+
+               
+
+      _FEED_COP(); /* feeds the dog */ 
+
+    } /* loop forever */ 
+
+  }
+
+  
+
+    
+
+  
+
+  #pragma CODE_SEG NON_BANKED
+
+  
+
+   interrupt 22 void routine_init3(void)  // 11=(255-232)/2
+
+  {  
+
+  
+
+    if(flag_fine_conv == 1){
+
+      
+
+     
+
+    periodo_A = 0x7F-((ATDDR0)/2);
+    
+    duty_A=periodo_A/2;
+
+        
+
+    periodo_B = 0x7F-((ATDDR0)/2);
+    
+    duty_B=periodo_B/2;
+
+    
+
+    periodo_C = 0xFF-ATDDR0;
+    
+    duty_C=periodo_C/2;
+
+    
+
+    periodo_D = 0xFF-ATDDR0;
+    
+    duty_D=periodo_D/2;
+
+    }
+
+    
+
+    flag_fine_conv = 0;
+
+  
+
+  }
+
+  
+
+   #pragma CODE_SEG DEFAULT 
